@@ -4,25 +4,25 @@ import { clsx } from "clsx";
 export default function Leaderboard({ data }: { data: any[] }) {
   return (
     <div className="bg-[#374151]/20 border border-[#374151] rounded-xl p-4 backdrop-blur-sm h-full flex flex-col">
-      <h2 className="text-[#22D3EE] text-xs font-bold uppercase mb-4 flex items-center gap-2 shrink-0">
+      <h2 className="text-[#22D3EE] text-xs font-bold uppercase mb-2 flex items-center gap-2 shrink-0">
         <span className="w-2 h-2 rounded-full bg-[#22D3EE] animate-pulse"></span>
         Papan Kedudukan
       </h2>
 
-      <div className="space-y-2 overflow-y-auto custom-scrollbar flex-1 pr-1">
+      <div className="space-y-1 overflow-y-auto custom-scrollbar flex-1 pr-1">
         {data.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full opacity-30 italic text-xs text-gray-400">
             Tiada pemenang setakat ini...
           </div>
         ) : (
-          data.map((player, i) => (
+          data.slice(0, 10).map((player, i) => (
             <motion.div
               key={player.userId}
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: i * 0.05 }}
               className={clsx(
-                "flex justify-between items-center p-2 rounded",
+                "flex justify-between items-center px-2 py-1.5 rounded",
                 i === 0 ? "bg-[#7C3AED]/10 border-l-2 border-[#7C3AED]" : "bg-transparent"
               )}
             >
@@ -42,7 +42,7 @@ export default function Leaderboard({ data }: { data: any[] }) {
               <span className={clsx(
                 "font-bold shrink-0",
                 i === 0 ? "text-[#FACC15]" : "text-white"
-              )}>{player.wins}{player.streak > 1 ? "🔥" : ""}</span>
+              )}>{player.wins}{i < 3 ? "🔥" : ""}</span>
             </motion.div>
           ))
         )}

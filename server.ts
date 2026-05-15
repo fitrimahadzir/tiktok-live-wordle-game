@@ -5,6 +5,8 @@ import { WebcastPushConnection } from "tiktok-live-connector";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { fileURLToPath } from "url";
+import { isValidWord } from "./validator.js";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,14 +26,58 @@ async function startServer() {
   // Game State
   let tiktokUsername = "";
   let tiktokConnection: WebcastPushConnection | null = null;
-  
+
   const WORD_CATEGORIES: Record<string, string[]> = {
-    haiwan: ["KERA", "KUDA", "GAJAH", "SINGA", "LEBAH", "SEMUT", "KATAK", "BUAYA", "GAGAK", "LEMBU", "TIKUS", "SIPUT", "BERUK", "ANGSA", "KUCING", "KELDAI", "HARIMAU", "BERUANG"],
-    makanan: ["NASI", "SATE", "ROTI", "SAYUR", "TELUR", "PULUT", "ROJAK", "KEBAB", "PIZZA", "SOSIS", "TEMPE", "NANAS", "BETIK", "LAKSA", "BIHUN", "DODOL", "WAJIK", "KICAP", "DAGING", "KACANG", "KEROPOK", "KETUPAT"],
-    pekerjaan: ["GURU", "CHEF", "POLIS", "BOMBA", "HAKIM", "ASKAR", "SUPIR", "PAKAR", "BADUT", "ATLET", "MEJAR", "WAKIL", "KADET", "DATUK", "DOKTOR", "PEGUAM", "NELAYAN", "TENTERA"]
+    haiwan: [
+      "KERA", "KUDA", "GAJAH", "SINGA", "LEBAH", "SEMUT", "KATAK", "BUAYA",
+      "GAGAK", "LEMBU", "TIKUS", "SIPUT", "BERUK", "ANGSA", "KUCING", "KELDAI",
+      "HARIMAU", "BERUANG"
+    ],
+
+    makanan: [
+      "NASI", "SATE", "ROTI", "SAYUR", "TELUR", "PULUT", "ROJAK",
+      "PIZA", "SOSEJ", "NANAS", "BETIK", "LAKSA", "BIHUN",
+      "DODOL", "WAJIK", "KICAP", "DAGING", "KACANG", "KEROPOK", "KETUPAT"
+    ],
+
+    pekerjaan: [
+      "GURU", "DOKTOR", "POLIS", "BOMBA", "HAKIM", "ASKAR",
+      "PAKAR", "BADUT", "ATLET", "PEGUAM", "NELAYAN", "TENTERA"
+    ],
+
+    buah: [
+      "EPAL", "OREN", "MANGGA", "PISANG", "DURIAN",
+      "LANGSAT", "MANGGIS", "NANGKA", "CERI", "JAMBU"
+    ],
+
+    warna: [
+      "MERAH", "BIRU", "HIJAU", "KUNING", "UNGU",
+      "HITAM", "PUTIH", "COKLAT", "JINGGA", "KELABU", "EMAS", "PERAK"
+    ],
+
+    negeri: [
+      "KEDAH", "PERAK", "PERLIS", "PAHANG", "MELAKA",
+      "SABAH", "JOHOR"
+    ],
+
+    ikan: [
+      "IKAN", "TONGKOL", "KELI", "KEMBUNG", "PARI",
+      "PATIN", "SELAR", "KERAPU"
+    ],
+
+    negara: ["MESIR", "YAMAN", "JEPUN", "CHINA", "INDIA", "KOREA", "BRUNEI", "KANADA", "BRAZIL", "ITALI", "SWEDEN", "NORWAY"],
+
+    planet: [
+      "BUMI", "MARIKH", "ZUHRAH", "UTARID", "ZUHAL", "NEPTUN"
+    ],
+
+    bunga: [
+      "ROSA", "MAWAR", "ORKID", "TERATAI",
+      "LILI", "JASMEN", "KEMBOJA", "MELATI", "DAISI"
+    ]
   };
 
-  let currentCategory = "haiwan";
+  let currentCategory = "";
   let currentWord = "";
   let guesses: any[] = [];
   let leaderboard: Record<string, { wins: number; streak: number; lastWin: number; nickname?: string, profilePictureUrl?: string }> = {};
@@ -44,8 +90,18 @@ async function startServer() {
   let viewerGuesses: Record<string, { count: number, maxGuesses: number }> = {};
   let skipVotes = new Set<string>();
 
-  function generateNewWord() {
-    const words = WORD_CATEGORIES[currentCategory] || WORD_CATEGORIES.haiwan;
+  function generateNewWord(forcedCategory?: string) {
+    if (forcedCategory) {
+      currentCategory = forcedCategory;
+    } else {
+      const categoryKeys = Object.keys(WORD_CATEGORIES);
+      const otherCategories = categoryKeys.filter(c => c !== currentCategory);
+      currentCategory = otherCategories.length > 0
+        ? otherCategories[Math.floor(Math.random() * otherCategories.length)]
+        : categoryKeys[Math.floor(Math.random() * categoryKeys.length)];
+    }
+
+    const words = (WORD_CATEGORIES[currentCategory] || WORD_CATEGORIES.haiwan).filter(isValidWord);
     currentWord = words[Math.floor(Math.random() * words.length)].toUpperCase();
     guesses = [];
     viewerGuesses = {};
@@ -76,7 +132,7 @@ async function startServer() {
 
   function handleGuess(uniqueId: string, nickname: string, profilePictureUrl: string, text: string) {
     if (gameStatus !== "playing") return;
-    
+
     // Anti-spam
     const now = Date.now();
     if (spamCooldowns[uniqueId] && now - spamCooldowns[uniqueId] < 2000) return;
@@ -96,7 +152,7 @@ async function startServer() {
     if (guess.length !== currentWord.length) return;
 
     if (!viewerGuesses[uniqueId]) {
-      viewerGuesses[uniqueId] = { count: 0, maxGuesses: 2 };
+      viewerGuesses[uniqueId] = { count: 0, maxGuesses: 3 };
     }
 
     if (viewerGuesses[uniqueId].count >= viewerGuesses[uniqueId].maxGuesses) {
@@ -126,7 +182,7 @@ async function startServer() {
     if (guess === currentWord) {
       gameStatus = "won";
       winner = { uniqueId, nickname, profilePictureUrl };
-      
+
       // Update leaderboard
       if (!leaderboard[uniqueId]) {
         leaderboard[uniqueId] = { wins: 0, streak: 0, lastWin: 0, nickname, profilePictureUrl };
@@ -190,7 +246,10 @@ async function startServer() {
       currentWord: gameStatus === "won" ? currentWord : null,
       wordLength: currentWord.length || 5,
       guesses,
-      leaderboard: Object.entries(leaderboard).map(([userId, data]) => ({ userId, ...data })),
+      leaderboard: Object.entries(leaderboard)
+        .map(([userId, data]) => ({ userId, ...data }))
+        .sort((a, b) => b.wins - a.wins)
+        .slice(0, 10),
       hypeInfo,
       gameStatus,
       roundNumber,
@@ -203,7 +262,7 @@ async function startServer() {
       if (tiktokConnection) {
         tiktokConnection.disconnect();
       }
-      
+
       tiktokUsername = username;
       tiktokConnection = new WebcastPushConnection(username);
 
@@ -224,11 +283,11 @@ async function startServer() {
         console.log(`${data.uniqueId} sent ${data.giftName}`);
 
         if (!viewerGuesses[data.uniqueId]) {
-          viewerGuesses[data.uniqueId] = { count: 0, maxGuesses: 2 };
+          viewerGuesses[data.uniqueId] = { count: 0, maxGuesses: 3 };
         }
-        
+
         if (data.giftName && data.giftName.toLowerCase().includes("heart")) {
-          viewerGuesses[data.uniqueId].maxGuesses = 10;
+          viewerGuesses[data.uniqueId].maxGuesses = 99999;
           io.emit("notification", { type: "powerup", data });
         } else {
           io.emit("notification", { type: "gift", data });
@@ -238,7 +297,7 @@ async function startServer() {
           // Reveal one random letter not yet guessed correctly
           const unrevealed = [];
           for (let i = 0; i < currentWord.length; i++) {
-             // Simple reveal: send a hint event
+            // Simple reveal: send a hint event
           }
           io.emit("powerup", { type: "reveal", gift: "Rose" });
         } else if (data.giftName === "Galaxy") {
@@ -250,7 +309,7 @@ async function startServer() {
       tiktokConnection.on("like", data => {
         const count = typeof data.likeCount === 'number' ? data.likeCount : 1;
         hypeInfo.current += count;
-        
+
         for (const target of TARGET_LEVELS) {
           if (hypeInfo.current < target) {
             hypeInfo.target = target;
@@ -258,7 +317,7 @@ async function startServer() {
           }
         }
         if (hypeInfo.current >= TARGET_LEVELS[TARGET_LEVELS.length - 1]) {
-           hypeInfo.target = TARGET_LEVELS[TARGET_LEVELS.length - 1]; // or you can dynamically increase
+          hypeInfo.target = TARGET_LEVELS[TARGET_LEVELS.length - 1]; // or you can dynamically increase
         }
 
         io.emit("hypeUpdate", hypeInfo);
@@ -277,8 +336,7 @@ async function startServer() {
         generateNewWord();
       }
       if (action.type === "category") {
-        currentCategory = action.category;
-        generateNewWord();
+        generateNewWord(action.category);
       }
       if (action.type === "simulateChat") {
         const uid = action.uniqueId || "dev_user";
@@ -290,52 +348,52 @@ async function startServer() {
         handleGuess(uid, "Pro Player", `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`, currentWord);
       }
       if (action.type === "simulateLike") {
-         const count = action.count || 20;
-         hypeInfo.current += count;
-         for (const target of TARGET_LEVELS) {
-           if (hypeInfo.current < target) {
-             hypeInfo.target = target;
-             break;
-           }
-         }
-         if (hypeInfo.current >= TARGET_LEVELS[TARGET_LEVELS.length - 1]) {
-            hypeInfo.target = TARGET_LEVELS[TARGET_LEVELS.length - 1];
-         }
-         io.emit("hypeUpdate", hypeInfo);
+        const count = action.count || 20;
+        hypeInfo.current += count;
+        for (const target of TARGET_LEVELS) {
+          if (hypeInfo.current < target) {
+            hypeInfo.target = target;
+            break;
+          }
+        }
+        if (hypeInfo.current >= TARGET_LEVELS[TARGET_LEVELS.length - 1]) {
+          hypeInfo.target = TARGET_LEVELS[TARGET_LEVELS.length - 1];
+        }
+        io.emit("hypeUpdate", hypeInfo);
       }
       if (action.type === "simulateTopPlayer") {
-         const isFitri = Math.random() > 0.5;
-         const dummyNum = Math.floor(Math.random() * 1000);
-         const dummyUid = isFitri ? "fitrimahadzir" : "dummy_pro_" + dummyNum;
-         leaderboard[dummyUid] = {
-           wins: Math.floor(Math.random() * 50) + 10,
-           streak: Math.floor(Math.random() * 5) + 1,
-           lastWin: Date.now(),
-           nickname: isFitri ? "fitrimahadzir" : `DummyPro${dummyNum}`,
-           profilePictureUrl: isFitri 
-              ? "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1"
-              : `https://api.dicebear.com/7.x/avataaars/svg?seed=${dummyUid}`
-         };
-         broadcastState();
+        const isFitri = Math.random() > 0.5;
+        const dummyNum = Math.floor(Math.random() * 1000);
+        const dummyUid = isFitri ? "fitrimahadzir" : "dummy_pro_" + dummyNum;
+        leaderboard[dummyUid] = {
+          wins: Math.floor(Math.random() * 50) + 10,
+          streak: Math.floor(Math.random() * 5) + 1,
+          lastWin: Date.now(),
+          nickname: isFitri ? "fitrimahadzir" : `DummyPro${dummyNum}`,
+          profilePictureUrl: isFitri
+            ? "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1"
+            : `https://api.dicebear.com/7.x/avataaars/svg?seed=${dummyUid}`
+        };
+        broadcastState();
       }
       if (action.type === "simulateGift") {
-         const data = {
-           uniqueId: "dev_user",
-           nickname: "Developer",
-           giftName: action.giftName,
-           profilePictureUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=dev"
-         };
+        const data = {
+          uniqueId: "dev_user",
+          nickname: "Developer",
+          giftName: action.giftName,
+          profilePictureUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=dev"
+        };
 
-         if (!viewerGuesses[data.uniqueId]) {
-           viewerGuesses[data.uniqueId] = { count: 0, maxGuesses: 2 };
-         }
-         
-         if (data.giftName && data.giftName.toLowerCase().includes("heart")) {
-           viewerGuesses[data.uniqueId].maxGuesses = 10;
-           io.emit("notification", { type: "powerup", data });
-         } else {
-           io.emit("notification", { type: "gift", data });
-         }
+        if (!viewerGuesses[data.uniqueId]) {
+          viewerGuesses[data.uniqueId] = { count: 0, maxGuesses: 2 };
+        }
+
+        if (data.giftName && data.giftName.toLowerCase().includes("heart")) {
+          viewerGuesses[data.uniqueId].maxGuesses = 10;
+          io.emit("notification", { type: "powerup", data });
+        } else {
+          io.emit("notification", { type: "gift", data });
+        }
       }
     });
   });

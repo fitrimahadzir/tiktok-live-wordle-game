@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 import { clsx } from "clsx";
 
-export default function WordleBoard({ guesses, wordLength = 5 }: { guesses: any[], wordLength?: number }) {
+export default function TekataBoard({ guesses, wordLength = 5 }: { guesses: any[], wordLength?: number }) {
   const visibleGuesses = guesses.slice(-5);
   // Pad with empty rows if less than 5
   const rows = [...visibleGuesses];
@@ -25,7 +25,7 @@ export default function WordleBoard({ guesses, wordLength = 5 }: { guesses: any[
       {/* Hints Discovered Section */}
       <div className="bg-[#374151]/20 border border-[#374151] rounded-2xl px-4 pb-4 pt-6 flex flex-col items-center relative w-full">
         <div className="text-[10px] font-black tracking-[0.2em] text-[#FACC15] uppercase absolute -top-2 bg-[#1F2937] px-2 shadow-sm rounded-sm">
-          Hint Ditemui
+          Huruf Telah Ditemui
         </div>
         <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${wordLength}, minmax(0, 1fr))` }}>
           {discoveredHints.map((char, i) => {

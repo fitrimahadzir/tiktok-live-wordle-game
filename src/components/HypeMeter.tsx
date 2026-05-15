@@ -19,7 +19,7 @@ export default function HypeMeter({ hypeInfo }: { hypeInfo: { current: number, t
           transition={{ type: "spring", damping: 20, stiffness: 100 }}
         />
       </div>
-      <p className="text-[10px] text-gray-400 mt-2 text-center uppercase tracking-tighter italic">Tap skrin untuk letupkan like!</p>
+      <p className="text-[10px] text-gray-400 mt-2 text-center uppercase tracking-tighter italic font-bold">🚀 SPAM TAP SKRIN SEKARANG!</p>
     </div>
   );
 }

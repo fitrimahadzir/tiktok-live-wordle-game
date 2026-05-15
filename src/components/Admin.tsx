@@ -1,5 +1,5 @@
 import { useState, FormEvent } from "react";
-import { Play, SkipForward, RotateCcw, Monitor, Globe, Gamepad2, Tv, Link2, AlertCircle } from "lucide-react";
+import { Play, SkipForward, RotateCcw, Monitor, Globe, Gamepad2, Tv, Link2, AlertCircle, Apple, Palette, Map } from "lucide-react";
 import { clsx } from "clsx";
 
 export default function Admin({ connectTiktok, tiktokStatus, adminAction, gameState }: any) {
@@ -13,14 +13,17 @@ export default function Admin({ connectTiktok, tiktokStatus, adminAction, gameSt
   const categories = [
     { id: "haiwan", label: "Haiwan", icon: Globe },
     { id: "makanan", label: "Makanan", icon: Link2 },
-    { id: "pekerjaan", label: "Pekerjaan", icon: Gamepad2 }
+    { id: "pekerjaan", label: "Pekerjaan", icon: Gamepad2 },
+    { id: "buah", label: "Buah", icon: Apple },
+    { id: "warna", label: "Warna", icon: Palette },
+    { id: "negeri", label: "Negeri", icon: Map }
   ];
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-8 animate-in fade-in duration-500">
       <div className="flex items-center gap-3">
         <Monitor className="w-8 h-8 text-neon-purple shadow-neon-purple" />
-        <h1 className="text-3xl font-black italic tracking-tighter uppercase">CONTROL CENTER</h1>
+        <h1 className="text-3xl font-black italic tracking-tighter uppercase">TEKATA CONTROL CENTER</h1>
       </div>
 
       {/* Connection Card */}
