@@ -1,0 +1,8 @@
+{
+  "name": "TikTok LIVE Wordle Game",
+  "description": "Interactive real-time Wordle overlay for TikTok LIVE streams with chat integration and neon cyberpunk UI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
