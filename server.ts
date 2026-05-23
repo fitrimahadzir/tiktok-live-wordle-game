@@ -21,7 +21,7 @@ async function startServer() {
     }
   });
 
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 8080;
 
   // Game State
   let tiktokUsername = "";
@@ -74,6 +74,56 @@ async function startServer() {
     bunga: [
       "ROSA", "MAWAR", "ORKID", "TERATAI",
       "LILI", "JASMEN", "KEMBOJA", "MELATI", "DAISI"
+    ],
+
+    kenderaan: [
+      "KERETA", "SKUTER", "TEKSI", "LORI", "KAPAL",
+      "BECA", "TREN"
+    ],
+
+    sukan: [
+      "BOLA", "RAGBI", "HOKI", "TENIS", "GOLF",
+      "LUMBA", "SENAM", "PANAH", "SILAT", "TINJU"
+    ],
+
+    benda: [
+      "MEJA", "LAMPU", "PINTU", "TIKAR", "BANTAL",
+      "CERMIN", "BALDI", "CAWAN", "SUDU"
+    ],
+
+    alam: [
+      "HUJAN", "RIBUT", "PETIR", "AWAN", "SUNGAI",
+      "LAUT", "PANTAI", "HUTAN", "TASIK", "ANGIN"
+    ],
+
+    anggota: [
+      "TANGAN", "HIDUNG", "MULUT", "LIDAH", "RAMBUT",
+      "DAGU", "GIGI", "DAHI", "LUTUT", "KAKI"
+    ],
+
+    sekolah: [
+      "BUKU", "PENSIL", "CIKGU", "DEWAN", "KELAS",
+      "ASRAMA", "KANTIN", "PAPAN", "UJIAN"
+    ],
+
+    teknologi: [
+      "SKRIN", "KABEL", "LAMAN", "ENJIN", "RADIO",
+      "DRON", "KAMERA", "BUTANG", "SERVER", "SISTEM"
+    ],
+
+    pakaian: [
+      "BAJU", "SELUAR", "KASUT", "TUDUNG", "KAIN",
+      "TOPI", "JAKET", "SARUNG", "TALI"
+    ],
+
+    rumah: [
+      "DAPUR", "BILIK", "TANDAS", "TINGKAP", "LAMPU",
+      "GARAJ", "SOFA", "TILAM", "PAGAR"
+    ],
+
+    cuaca: [
+      "PANAS", "HUJAN", "RIBUT", "PETIR", "ANGIN",
+      "KABUS", "CUACA", "BAHANG", "SEJUK", "TEDUH"
     ]
   };
 
@@ -82,13 +132,14 @@ async function startServer() {
   let guesses: any[] = [];
   let leaderboard: Record<string, { wins: number; streak: number; lastWin: number; nickname?: string, profilePictureUrl?: string }> = {};
   let hypeInfo = { current: 0, target: 1000 };
-  const TARGET_LEVELS = [1000, 2000, 5000, 10000, 20000];
+  const TARGET_LEVELS = [1000, 2000, 5000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000];
   let gameStatus = "waiting"; // waiting, playing, won
   let roundNumber = 1;
   let winner: any = null;
   let spamCooldowns: Record<string, number> = {};
   let viewerGuesses: Record<string, { count: number, maxGuesses: number }> = {};
   let skipVotes = new Set<string>();
+  let lastLikeCount = 0; // Track cumulative TikTok like count to compute delta
 
   function generateNewWord(forcedCategory?: string) {
     if (forcedCategory) {
@@ -114,13 +165,13 @@ async function startServer() {
 
   function broadcastState() {
     io.emit("gameState", {
-      currentWord: gameStatus === "won" ? currentWord : null,
+      currentWord: currentWord,
       wordLength: currentWord.length || 5,
       guesses,
       leaderboard: Object.entries(leaderboard)
         .map(([userId, data]) => ({ userId, ...data }))
         .sort((a, b) => b.wins - a.wins)
-        .slice(0, 10),
+        .slice(0, 7),
       hypeInfo,
       gameStatus,
       roundNumber,
@@ -152,7 +203,7 @@ async function startServer() {
     if (guess.length !== currentWord.length) return;
 
     if (!viewerGuesses[uniqueId]) {
-      viewerGuesses[uniqueId] = { count: 0, maxGuesses: 3 };
+      viewerGuesses[uniqueId] = { count: 0, maxGuesses: 99999 };
     }
 
     if (viewerGuesses[uniqueId].count >= viewerGuesses[uniqueId].maxGuesses) {
@@ -249,7 +300,7 @@ async function startServer() {
       leaderboard: Object.entries(leaderboard)
         .map(([userId, data]) => ({ userId, ...data }))
         .sort((a, b) => b.wins - a.wins)
-        .slice(0, 10),
+        .slice(0, 7),
       hypeInfo,
       gameStatus,
       roundNumber,
@@ -283,7 +334,7 @@ async function startServer() {
         console.log(`${data.uniqueId} sent ${data.giftName}`);
 
         if (!viewerGuesses[data.uniqueId]) {
-          viewerGuesses[data.uniqueId] = { count: 0, maxGuesses: 3 };
+          viewerGuesses[data.uniqueId] = { count: 0, maxGuesses: 99999 };
         }
 
         if (data.giftName && data.giftName.toLowerCase().includes("heart")) {
@@ -307,20 +358,29 @@ async function startServer() {
       });
 
       tiktokConnection.on("like", data => {
-        const count = typeof data.likeCount === 'number' ? data.likeCount : 1;
-        hypeInfo.current += count;
+        // data.totalLikeCount is cumulative since stream started
+        // We only add the DELTA (new - previous) to avoid inflated counts
+        const totalNow = typeof data.totalLikeCount === 'number' ? data.totalLikeCount
+                        : typeof data.likeCount === 'number' ? data.likeCount
+                        : 0;
+        const delta = totalNow > lastLikeCount ? totalNow - lastLikeCount : 0;
+        lastLikeCount = totalNow;
 
-        for (const target of TARGET_LEVELS) {
-          if (hypeInfo.current < target) {
-            hypeInfo.target = target;
-            break;
+        if (delta > 0) {
+          hypeInfo.current += delta;
+
+          for (const target of TARGET_LEVELS) {
+            if (hypeInfo.current < target) {
+              hypeInfo.target = target;
+              break;
+            }
           }
-        }
-        if (hypeInfo.current >= TARGET_LEVELS[TARGET_LEVELS.length - 1]) {
-          hypeInfo.target = TARGET_LEVELS[TARGET_LEVELS.length - 1]; // or you can dynamically increase
-        }
+          if (hypeInfo.current >= TARGET_LEVELS[TARGET_LEVELS.length - 1]) {
+            hypeInfo.target = TARGET_LEVELS[TARGET_LEVELS.length - 1];
+          }
 
-        io.emit("hypeUpdate", hypeInfo);
+          io.emit("hypeUpdate", hypeInfo);
+        }
       });
 
       tiktokConnection.on("follow", data => {
@@ -413,7 +473,14 @@ async function startServer() {
     });
   }
 
-  httpServer.listen(PORT, "0.0.0.0", () => {
+  generateNewWord();
+  
+  // Perbaharui data setiap 2 saat untuk pastikan Host sentiasa nampak word
+  setInterval(() => {
+    broadcastState();
+  }, 2000);
+
+  httpServer.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }

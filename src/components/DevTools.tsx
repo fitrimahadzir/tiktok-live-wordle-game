@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bot, Bug, Heart, ThumbsUp, MessageSquare, Trophy, Send } from "lucide-react";
+import { Bot, Bug, Heart, ThumbsUp, Trophy, Send, X } from "lucide-react";
 import { clsx } from "clsx";
 
 const generateDummyWord = (length: number) => {
@@ -12,6 +12,7 @@ const generateDummyWord = (length: number) => {
   }
   return word;
 };
+
 const DUMMY_USERS = [
   { id: "user_a", name: "Ali" },
   { id: "user_b", name: "Abu" },
@@ -35,32 +36,31 @@ export default function DevTools({ adminAction, wordLength = 5 }: { adminAction:
 
   useEffect(() => {
     let interval: any;
-    if (import.meta.env.VITE_DEV_MODE === "true" && isAutoPilot) {
+    if (isAutoPilot) {
       interval = setInterval(() => {
         if (Math.random() < 0.1) {
           adminAction({ type: "simulateCorrect" });
         } else {
           const randomWord = generateDummyWord(wordLength);
           const randomUser = DUMMY_USERS[Math.floor(Math.random() * DUMMY_USERS.length)];
-          adminAction({ 
-            type: "simulateChat", 
+          adminAction({
+            type: "simulateChat",
             comment: randomWord,
             uniqueId: randomUser.id,
-            nickname: randomUser.name 
+            nickname: randomUser.name
           });
         }
-      }, 2000); // Send a dummy guess every 2 seconds
+      }, 2000);
     }
     return () => clearInterval(interval);
   }, [isAutoPilot, adminAction]);
 
-  if (import.meta.env.VITE_DEV_MODE !== "true") return null;
 
   if (!isOpen) {
     return (
       <button 
         onClick={() => setIsOpen(true)}
-        className="fixed top-4 right-4 bg-pink-600 border border-pink-500/50 p-2 rounded-full cursor-pointer hover:bg-pink-500 z-50 text-white shadow-lg"
+        className="fixed top-4 right-4 bg-neon-purple border border-neon-purple/50 p-2 rounded-full cursor-pointer hover:bg-neon-purple/80 z-50 text-white shadow-lg"
       >
         <Bug className="w-5 h-5" />
       </button>
@@ -68,32 +68,46 @@ export default function DevTools({ adminAction, wordLength = 5 }: { adminAction:
   }
 
   return (
-    <div className="fixed top-4 right-4 w-64 bg-black/90 backdrop-blur-md border border-pink-500/30 rounded-2xl z-50 overflow-hidden shadow-2xl flex flex-col">
-      <div className="bg-pink-500/20 p-3 flex items-center justify-between border-b border-pink-500/30">
+    <div className="fixed top-4 right-4 w-64 bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl z-50 overflow-hidden shadow-2xl flex flex-col">
+      <div className="bg-slate-100 p-3 flex items-center justify-between border-b border-slate-200">
         <div className="flex items-center gap-2">
-            <Bug className="w-4 h-4 text-pink-400" />
-            <h3 className="text-xs font-bold text-pink-400 tracking-wider uppercase">Dev Tools</h3>
+            <Bug className="w-4 h-4 text-neon-purple" />
+            <h3 className="text-xs font-bold text-slate-700 tracking-wider uppercase">Panel Pembangun</h3>
         </div>
-        <button onClick={() => setIsOpen(false)} className="text-pink-400 hover:text-white pb-1">×</button>
+        <button onClick={() => setIsOpen(false)} className="text-slate-500 hover:text-slate-800 pb-1">
+          <X className="w-4 h-4" />
+        </button>
       </div>
       
       <div className="p-3 space-y-2 flex-1 overflow-y-auto max-h-[80vh]">
         <button
           onClick={() => adminAction({ type: "simulateLike", count: 100 })}
-          className="w-full bg-white/5 border border-pink-500/30 p-2 rounded-lg text-xs font-bold text-pink-300 hover:bg-pink-500/20 transition-all flex items-center gap-2"
+          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all flex items-center gap-2"
         >
-          <ThumbsUp className="w-3.5 h-3.5" />
-          Simulate 100 Likes
+          <ThumbsUp className="w-3.5 h-3.5 text-neon-cyan" />
+          +100 Like
         </button>
+        <div className="grid grid-cols-3 gap-1.5">
+          {[1000, 2000, 5000, 10000, 20000, 30000].map((count) => (
+            <button
+              key={count}
+              onClick={() => adminAction({ type: "simulateLike", count })}
+              className="bg-slate-50 border border-slate-200 p-1.5 rounded-lg text-[10px] font-bold text-slate-700 hover:bg-slate-100 transition-all flex items-center justify-center gap-1"
+            >
+              <ThumbsUp className="w-3 h-3 text-neon-cyan shrink-0" />
+              +{count.toLocaleString()}
+            </button>
+          ))}
+        </div>
         <button
           onClick={() => adminAction({ type: "simulateGift", giftName: "Heart" })}
-          className="w-full bg-white/5 border border-pink-500/30 p-2 rounded-lg text-xs font-bold text-pink-300 hover:bg-pink-500/20 transition-all flex items-center gap-2"
+          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all flex items-center gap-2"
         >
-          <Heart className="w-3.5 h-3.5" />
-          Simulate Heart
+          <Heart className="w-3.5 h-3.5 text-red-500" />
+          Hadiah Hati
         </button>
-        <div className="pt-2 border-t border-pink-500/10 mt-2 space-y-2">
-          <p className="text-[10px] text-pink-400/50 uppercase font-bold px-1">Manual Input</p>
+        <div className="pt-2 border-t border-slate-200 mt-2 space-y-2">
+          <p className="text-[10px] text-slate-500 uppercase font-bold px-1">Input Manual</p>
           <div className="flex gap-2">
             <input 
               type="text" 
@@ -102,14 +116,14 @@ export default function DevTools({ adminAction, wordLength = 5 }: { adminAction:
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleManualSend();
               }}
-              placeholder={`GUESS (${wordLength})`}
+              placeholder={`TEKAAN (${wordLength})`}
               maxLength={wordLength}
-              className="flex-1 bg-white/5 border border-pink-500/30 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-pink-500 transition-all uppercase font-mono tracking-widest"
+              className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-neon-purple transition-all uppercase font-mono tracking-widest min-w-0"
             />
             <button
               onClick={handleManualSend}
               disabled={manualGuess.length !== wordLength}
-              className="bg-pink-500/20 border border-pink-500/30 hover:bg-pink-500 hover:text-white p-2 rounded-lg text-pink-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              className="bg-neon-purple/10 border border-neon-purple/30 hover:bg-neon-purple hover:text-white p-2 rounded-lg text-neon-purple transition-all disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -117,29 +131,29 @@ export default function DevTools({ adminAction, wordLength = 5 }: { adminAction:
         </div>
         <button
           onClick={() => adminAction({ type: "simulateCorrect" })}
-          className="w-full bg-white/5 border border-pink-500/30 p-2 rounded-lg text-xs font-bold text-[#22C55E] hover:bg-[#22C55E]/20 transition-all flex items-center gap-2"
+          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-neon-green hover:bg-green-50 transition-all flex items-center gap-2"
         >
-          <Trophy className="w-3.5 h-3.5" />
-          Simulate Correct Guess
+          <Trophy className="w-3.5 h-3.5 text-neon-green" />
+          Teka Betul
         </button>
         <button
           onClick={() => adminAction({ type: "simulateTopPlayer" })}
-          className="w-full bg-white/5 border border-pink-500/30 p-2 rounded-lg text-xs font-bold text-pink-300 hover:bg-pink-500/20 transition-all flex items-center gap-2"
+          className="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all flex items-center gap-2"
         >
-          <Trophy className="w-3.5 h-3.5" />
-          Simulate Top Player
+          <Trophy className="w-3.5 h-3.5 text-neon-yellow" />
+          Pemain Teratas
         </button>
         <button
           onClick={() => setIsAutoPilot(!isAutoPilot)}
           className={clsx(
-            "w-full border p-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2",
+            "w-full border p-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 mt-2",
             isAutoPilot 
-              ? "bg-pink-500 text-white border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.5)] animate-pulse" 
-              : "bg-white/5 border-pink-500/30 text-pink-300 hover:bg-pink-500/20"
+              ? "bg-neon-purple text-white border-neon-purple shadow-[0_0_15px_rgba(139,92,246,0.5)] animate-pulse" 
+              : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
           )}
         >
           <Bot className="w-3.5 h-3.5" />
-          {isAutoPilot ? "Auto Dummy (ON)" : "Auto Dummy (OFF)"}
+          {isAutoPilot ? "Auto Dummy (HIDUP)" : "Auto Dummy (MATI)"}
         </button>
       </div>
     </div>
