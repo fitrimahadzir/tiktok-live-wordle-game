@@ -1,5 +1,5 @@
 import { useState, FormEvent } from "react";
-import { Play, SkipForward, RotateCcw, Monitor, Link2, AlertCircle, X, Eye, Moon, ChevronDown, Code } from "lucide-react";
+import { Play, SkipForward, RotateCcw, Monitor, AlertCircle, X, Eye, Moon, Code, ChevronDown, Apple, Palette, Map, Globe, Tv, Gamepad2, Link2 } from "lucide-react";
 import { clsx } from "clsx";
 
 interface AdminProps {
@@ -19,13 +19,6 @@ interface AdminProps {
   setShowLikeBar: (show: boolean) => void;
 }
 
-const DIFFICULTIES = [
-  { id: "easy", label: "Easy", points: 1 },
-  { id: "medium", label: "Medium", points: 2 },
-  { id: "hard", label: "Hard", points: 5 },
-  { id: "impossible", label: "Impossible", points: 15 },
-];
-
 export default function Admin({
   isOpen,
   onClose,
@@ -43,7 +36,30 @@ export default function Admin({
   setShowLikeBar,
 }: AdminProps) {
   const [username, setUsername] = useState("");
-  const [isDifficultyOpen, setIsDifficultyOpen] = useState(false);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+
+  const categories = [
+    { id: "haiwan", label: "Haiwan", icon: Globe },
+    { id: "makanan", label: "Makanan", icon: Link2 },
+    { id: "pekerjaan", label: "Pekerjaan", icon: Gamepad2 },
+    { id: "buah", label: "Buah", icon: Apple },
+    { id: "warna", label: "Warna", icon: Palette },
+    { id: "negeri", label: "Negeri", icon: Map },
+    { id: "ikan", label: "Ikan", icon: Globe },
+    { id: "negara", label: "Negara", icon: Globe },
+    { id: "planet", label: "Planet", icon: Globe },
+    { id: "bunga", label: "Bunga", icon: Globe },
+    { id: "kenderaan", label: "Kenderaan", icon: Tv },
+    { id: "sukan", label: "Sukan", icon: Gamepad2 },
+    { id: "benda", label: "Benda", icon: Globe },
+    { id: "alam", label: "Alam", icon: Globe },
+    { id: "anggota", label: "Anggota", icon: Globe },
+    { id: "sekolah", label: "Sekolah", icon: Globe },
+    { id: "teknologi", label: "Teknologi", icon: Globe },
+    { id: "pakaian", label: "Pakaian", icon: Globe },
+    { id: "rumah", label: "Rumah", icon: Globe },
+    { id: "cuaca", label: "Cuaca", icon: Globe },
+  ];
 
   const handleConnect = (e: FormEvent) => {
     e.preventDefault();
@@ -88,7 +104,7 @@ export default function Admin({
           <div className="flex justify-center">
             <img
               src="/images/logo.png"
-              alt="Odd Hunt Live Logo"
+              alt="Tekata Live Logo"
               className="h-16 w-auto object-contain"
             />
           </div>
@@ -155,81 +171,6 @@ export default function Admin({
               <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2 text-red-400 text-xs">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span className="leading-relaxed">{tiktokStatus.message}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Grid Mode Control */}
-          <div className="bg-slate-800/50 shadow-sm p-4 rounded-2xl border border-slate-700/50 space-y-3">
-            <h2 className="text-xs font-bold flex items-center gap-2 text-neon-cyan uppercase tracking-widest">
-              <div className="w-1.5 h-1.5 rounded-full bg-neon-cyan" />
-              Mode
-            </h2>
-            <div className="flex gap-2">
-              {["LOW", "MEDIUM", "HIGH"].map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => adminAction({ type: "setGridMode", mode })}
-                  className={clsx(
-                    "flex-1 py-2.5 rounded-xl border text-[11px] font-black uppercase tracking-wider transition-all",
-                    gameState?.gridMode === mode
-                      ? mode === "LOW"
-                        ? "bg-neon-green/20 text-neon-green border-neon-green shadow-[0_0_10px_rgba(22,163,74,0.2)]"
-                        : mode === "MEDIUM"
-                        ? "bg-yellow-500/20 text-neon-yellow border-neon-yellow shadow-[0_0_10px_rgba(202,138,4,0.2)]"
-                        : "bg-red-400/20 text-red-400 border-red-400 shadow-[0_0_10px_rgba(248,113,113,0.2)]"
-                      : "bg-slate-900 border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300"
-                  )}
-                >
-                  <span>{mode}</span>
-                  <span className="block text-[8px] font-mono font-normal tracking-normal opacity-60 mt-0.5">
-                    {mode === "LOW" ? "12×10" : mode === "MEDIUM" ? "15×11" : "18×12"}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Level */}
-          <div className="bg-slate-800/50 shadow-sm p-4 rounded-2xl border border-slate-700/50 space-y-2">
-            <button
-              onClick={() => setIsDifficultyOpen(!isDifficultyOpen)}
-              className="w-full flex items-center justify-between group outline-none"
-            >
-              <h2 className="text-xs font-bold flex items-center gap-2 text-neon-yellow uppercase tracking-widest group-hover:text-yellow-300 transition-colors">
-                <div className="w-1.5 h-1.5 rounded-full bg-neon-yellow" />
-                Level
-              </h2>
-              <ChevronDown
-                className={clsx(
-                  "w-4 h-4 text-slate-500 transition-transform duration-300",
-                  isDifficultyOpen && "rotate-180"
-                )}
-              />
-            </button>
-
-            {isDifficultyOpen && (
-              <div className="flex flex-col gap-2 pt-3 border-t border-slate-700/50">
-                {DIFFICULTIES.map((d) => (
-                  <button
-                    key={d.id}
-                    onClick={() => adminAction({ type: "setDifficulty", difficulty: d.id })}
-                    className={clsx(
-                      "flex items-center justify-between px-3 py-2 rounded-xl border transition-all text-[11px] font-bold uppercase tracking-wider cursor-pointer",
-                      gameState?.difficulty === d.id
-                        ? "bg-neon-yellow text-slate-900 border-neon-yellow"
-                        : "bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-300"
-                    )}
-                  >
-                    <span>{d.label}</span>
-                    <span className={clsx(
-                      "text-[10px] font-mono font-black tracking-tight",
-                      gameState?.difficulty === d.id ? "text-slate-700" : "text-neon-yellow"
-                    )}>
-                      +{d.points}
-                    </span>
-                  </button>
-                ))}
               </div>
             )}
           </div>
@@ -425,6 +366,46 @@ export default function Admin({
                 </span>
               </button>
             </div>
+          </div>
+
+          {/* Pilihan Kategori */}
+          <div className="bg-slate-800/50 shadow-sm p-4 rounded-2xl border border-slate-700/50 space-y-2">
+            <button
+              onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+              className="w-full flex items-center justify-between group outline-none"
+            >
+              <h2 className="text-xs font-bold flex items-center gap-2 text-neon-yellow uppercase tracking-widest group-hover:text-yellow-300 transition-colors">
+                <div className="w-1.5 h-1.5 rounded-full bg-neon-yellow" />
+                Pilihan Kategori
+              </h2>
+              <ChevronDown className={clsx(
+                "w-4 h-4 text-slate-500 transition-transform duration-300",
+                isCategoryDropdownOpen && "rotate-180"
+              )} />
+            </button>
+
+            {isCategoryDropdownOpen && (
+              <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-700/50">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      adminAction({ type: "category", category: cat.id });
+                      setIsCategoryDropdownOpen(false);
+                    }}
+                    className={clsx(
+                      "flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all text-[11px] font-bold uppercase tracking-wider",
+                      gameState?.currentCategory === cat.id
+                        ? "bg-neon-yellow text-slate-900 border-neon-yellow shadow-neon-yellow"
+                        : "bg-slate-900 border-slate-700 text-slate-400 hover:border-neon-yellow hover:text-neon-yellow hover:bg-neon-yellow/10"
+                    )}
+                  >
+                    <cat.icon className="w-3.5 h-3.5" />
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* OBS Guide */}

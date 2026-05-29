@@ -15,6 +15,7 @@ export class TikTokManager {
   async connect(username: string) {
     this.disconnect();
     this.gameEngine.setTiktokUsername(username);
+    this.gameEngine.setLastLikeCount(0);
     this.io.emit("tiktokStatus", { status: "connecting" });
 
     this.connection = new WebcastPushConnection(username);
@@ -35,10 +36,30 @@ export class TikTokManager {
     });
 
     this.connection.on("gift", (data) => {
-      this.io.emit("notification", { type: "gift", data });
+      const giftName = data.giftName || "";
+      this.gameEngine.handleGift(data.uniqueId, giftName);
+
+      if (giftName.toLowerCase().includes("heart")) {
+        this.io.emit("notification", { type: "powerup", data });
+      } else {
+        this.io.emit("notification", { type: "gift", data });
+      }
     });
 
     this.connection.on("like", (data) => {
+      const totalNow = typeof data.totalLikeCount === "number"
+        ? data.totalLikeCount
+        : typeof data.likeCount === "number"
+        ? data.likeCount
+        : 0;
+      const last = this.gameEngine.getLastLikeCount();
+      const delta = totalNow > last ? totalNow - last : 0;
+      this.gameEngine.setLastLikeCount(totalNow);
+
+      if (delta > 0) {
+        this.gameEngine.handleLike(delta);
+      }
+
       this.io.emit("notification", { type: "like", data });
     });
 

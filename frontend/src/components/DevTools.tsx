@@ -11,9 +11,9 @@ const DUMMY_USERS = [
   { id: "fitrimahadzir", name: "fitrimahadzir" },
 ];
 
-const RANDOM_COORDS = [
-  "A1", "B2", "C3", "D4", "E5", "F6", "G7", "H8", "I9", "J10", "K11", "L12",
-  "M1", "N2", "O3", "P4", "Q5", "R6", "A7", "B8", "C9", "D10", "E11", "F12",
+const DUMMY_WORDS = [
+  "BUKU", "MEJA", "RUMAH", "KERJA", "TIKAT",
+  "PINTU", "GULA", "TALI", "KOTA", "BIRU",
 ];
 
 export default function DevTools({ adminAction }: { adminAction: any }) {
@@ -36,10 +36,10 @@ export default function DevTools({ adminAction }: { adminAction: any }) {
           adminAction({ type: "simulateCorrect" });
         } else {
           const randomUser = DUMMY_USERS[Math.floor(Math.random() * DUMMY_USERS.length)];
-          const wrongCoord = RANDOM_COORDS[Math.floor(Math.random() * RANDOM_COORDS.length)];
+          const wrongWord = DUMMY_WORDS[Math.floor(Math.random() * DUMMY_WORDS.length)];
           adminAction({
             type: "simulateChat",
-            comment: wrongCoord,
+            comment: wrongWord,
             uniqueId: randomUser.id,
             nickname: randomUser.name,
           });
@@ -111,7 +111,7 @@ export default function DevTools({ adminAction }: { adminAction: any }) {
 
         <div className="pt-2 border-t border-slate-200 mt-2 space-y-2">
           <p className="text-[10px] text-slate-500 uppercase font-bold px-1">
-            Input Koordinat
+            Input Perkataan
           </p>
           <div className="flex gap-2">
             <input
@@ -121,7 +121,7 @@ export default function DevTools({ adminAction }: { adminAction: any }) {
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleManualSend();
               }}
-              placeholder="CONTOH: A1"
+              placeholder="CONTOH: BUKU"
               className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-neon-purple transition-all uppercase font-mono tracking-widest min-w-0"
             />
             <button

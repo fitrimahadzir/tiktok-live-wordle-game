@@ -1,10 +1,8 @@
 import { motion, AnimatePresence } from "motion/react";
 import confetti from "canvas-confetti";
 import { useEffect, useRef } from "react";
-import OddOneGrid from "./OddOneGrid";
+import TekataBoard from "./TekataBoard";
 import Leaderboard from "./Leaderboard";
-
-const COL_LABELS = "ABCDEFGHIJKLMNOPQR";
 
 export default function Overlay({ gameState, notifications, tiktokStatus, adminAction, showLikeBar }: any) {
   const prevStatusRef = useRef<string>("");
@@ -30,11 +28,6 @@ export default function Overlay({ gameState, notifications, tiktokStatus, adminA
       </div>
     );
 
-  const oddColLabel =
-    gameState.oddPosition ? COL_LABELS[gameState.oddPosition.col] : "";
-  const oddRowLabel = gameState.oddPosition ? gameState.oddPosition.row + 1 : "";
-  const answerLabel = `${oddColLabel}${oddRowLabel}`;
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-dark-bg dark:bg-slate-900 transition-colors duration-500">
       <div className="w-[1280px] h-[768px] relative mx-auto bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-sans overflow-hidden flex flex-col p-6 border border-slate-200 dark:border-slate-700 select-none transition-colors duration-500 shadow-2xl dark:shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-2xl">
@@ -44,94 +37,22 @@ export default function Overlay({ gameState, notifications, tiktokStatus, adminA
           <div className="w-64 h-fit flex flex-col gap-4">
             <img
               src="/images/logo.png"
-              alt="Odd Hunt Live"
-              className="w-[70%] h-auto object-contain mx-auto mt-1"
+              alt="Tekata Live"
+              className="w-[90%] h-auto object-contain mx-auto mt-1"
             />
             <Leaderboard data={gameState.leaderboard} />
           </div>
 
           {/* Center Column */}
-          <div className="w-fit flex flex-col items-center justify-center">
-            <div className="relative">
-              <OddOneGrid
-                grid={gameState.grid}
-                oddPosition={gameState.oddPosition}
-                difficulty={gameState.difficulty}
-                roundNumber={gameState.roundNumber}
-                gameStatus={gameState.gameStatus}
-                gridMode={gameState.gridMode || "LOW"}
-                gridConfig={gameState.gridConfig || { cols: 18, rows: 12 }}
-              />
-
-              {/* Notifications overlay centered on grid */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-2 z-40 pointer-events-none items-center">
-                <AnimatePresence>
-                  {notifications.map((n: any, i: number) => (
-                    <motion.div
-                      key={i}
-                      initial={{ y: 20, opacity: 0, scale: 0.9 }}
-                      animate={{ y: 0, opacity: 1, scale: 1 }}
-                      exit={{ y: -20, opacity: 0, scale: 0.9 }}
-                      className={`bg-white dark:bg-slate-800 border-2 ${
-                        n.type === "powerup"
-                          ? "border-neon-yellow"
-                          : "border-neon-purple"
-                      } p-3 px-6 rounded-2xl flex items-center gap-4 shadow-xl ring-4 ring-white dark:ring-slate-900 transition-colors duration-500`}
-                    >
-                      {n.type === "powerup" ? (
-                        <>
-                          {n.data.profilePictureUrl && (
-                            <img
-                              src={n.data.profilePictureUrl}
-                              alt={n.data.nickname}
-                              className="w-10 h-10 rounded-full border-2 border-[#FACC15] shrink-0"
-                              referrerPolicy="no-referrer"
-                            />
-                          )}
-                          <div className="flex flex-col">
-                            <div className="text-sm font-bold text-slate-700 dark:text-white/70 whitespace-nowrap">
-                              Terima kasih heart me ❤️
-                            </div>
-                            <div className="text-xs font-black tracking-tight text-[#CA8A04] dark:text-[#FACC15] uppercase">
-                              <span className="text-slate-900 dark:text-white">
-                                @{n.data.uniqueId}
-                              </span>{" "}
-                              dapat tekaan unlimited
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#22D3EE] to-[#7C3AED] flex items-center justify-center text-sm shrink-0">
-                            {n.type === "gift" ? "🎁" : n.type === "follow" ? "💖" : "👍"}
-                          </div>
-                          <div>
-                            <div className="text-[10px] text-[#0891B2] dark:text-[#22D3EE] font-bold uppercase">
-                              {n.type === "gift"
-                                ? "Hadiah TikTok"
-                                : n.type === "follow"
-                                ? "Pengikut Baru"
-                                : "Like"}
-                            </div>
-                            <div className="text-sm font-black tracking-tight uppercase text-slate-900 dark:text-white">
-                              {n.data.nickname}{" "}
-                              {n.type === "gift"
-                                ? `hantar ${n.data.giftName}!`
-                                : n.type === "follow"
-                                ? "mula mengikuti!"
-                                : "memberi like!"}
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            </div>
+          <div className="w-fit flex flex-col items-center justify-center relative">
+            <TekataBoard
+              guesses={gameState.guesses || []}
+              wordLength={gameState.wordLength || 5}
+              category={gameState.currentCategory}
+            />
 
             {/* Gift / Heart CTA Banner */}
-            <div className="mt-6 w-full max-w-md">
+            <div className="mt-6 w-full max-w-md relative">
               <motion.div
                 whileHover={{ scale: 1.02, y: -2 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -163,12 +84,44 @@ export default function Overlay({ gameState, notifications, tiktokStatus, adminA
                   </div>
 
                   <div className="shrink-0 w-8 h-8 rounded-full bg-pink-200/60 dark:bg-white/5 border border-pink-300/50 dark:border-pink-400/20 flex items-center justify-center group-hover:bg-pink-300/60 dark:group-hover:bg-pink-400/15 group-hover:border-pink-400/60 dark:group-hover:border-pink-400/40 group-hover:translate-x-0.5 transition-all duration-300">
-                    <svg className="w-3.5 h-3.5 text-pink-500/70 dark:text-pink-300/50 group-hover:text-pink-600 dark:group-hover:text-pink-300 transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-3.5 h-3.5 text-pink-500/70 dark:text-pink-300/50 group-hover:text-pink-600 dark:group-hover:text-pink-300 transition-colors duration-300" fill="none" viewBox="0 0 24 20" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                   </div>
                 </div>
               </motion.div>
+
+              {/* Notifications (centered over support host container) */}
+              <div className="absolute inset-0 flex flex-col gap-2 items-center justify-center z-40 pointer-events-none">
+                <AnimatePresence>
+                  {notifications.filter((n: any) => n.type === "powerup").slice(0, 1).map((n: any, i: number) => (
+                    <motion.div
+                      key={i}
+                      initial={{ y: 20, opacity: 0, scale: 0.9 }}
+                      animate={{ y: 0, opacity: 1, scale: 1 }}
+                      exit={{ y: -20, opacity: 0, scale: 0.9 }}
+                      className="bg-white dark:bg-slate-800 border-2 border-neon-yellow p-3 px-6 rounded-2xl flex items-center gap-4 shadow-xl ring-4 ring-white dark:ring-slate-900 transition-colors duration-500"
+                    >
+                      {n.data.profilePictureUrl && (
+                        <img
+                          src={n.data.profilePictureUrl}
+                          alt={n.data.nickname}
+                          className="w-10 h-10 rounded-full border-2 border-[#FACC15] shrink-0"
+                          referrerPolicy="no-referrer"
+                        />
+                      )}
+                      <div className="flex flex-col">
+                        <div className="text-sm font-bold text-slate-700 dark:text-white/70 whitespace-nowrap">
+                          Terima kasih heart me ❤️
+                        </div>
+                        <div className="text-xs font-black tracking-tight text-[#CA8A04] dark:text-[#FACC15] uppercase">
+                          <span className="text-slate-900 dark:text-white">@{n.data.uniqueId}</span> dapat tekaan unlimited
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
             </div>
 
             {/* Like Bar */}
@@ -262,10 +215,10 @@ export default function Overlay({ gameState, notifications, tiktokStatus, adminA
 
                 <div className="space-y-2 mb-10">
                   <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
-                    Berjaya cari jawapan:
+                    Berjaya teka perkataan:
                   </p>
                   <div className="text-7xl font-black text-neon-green tracking-tighter uppercase">
-                    {answerLabel}
+                    {gameState.word}
                   </div>
                 </div>
 
@@ -277,7 +230,33 @@ export default function Overlay({ gameState, notifications, tiktokStatus, adminA
           )}
         </AnimatePresence>
 
-
+        {/* Notifications (non-powerup) */}
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex flex-col gap-2 z-40 pointer-events-none items-center">
+          <AnimatePresence>
+            {notifications.filter((n: any) => n.type !== "powerup").map((n: any, i: number) => (
+              <motion.div
+                key={i}
+                initial={{ y: 20, opacity: 0, scale: 0.9 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: -20, opacity: 0, scale: 0.9 }}
+                className="bg-white dark:bg-slate-800 border-2 border-neon-purple p-3 px-6 rounded-2xl flex items-center gap-4 shadow-xl ring-4 ring-white dark:ring-slate-900 transition-colors duration-500"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#22D3EE] to-[#7C3AED] flex items-center justify-center text-sm shrink-0">
+                  {n.type === "gift" ? "🎁" : n.type === "follow" ? "💖" : "👍"}
+                </div>
+                <div>
+                  <div className="text-[10px] text-[#0891B2] dark:text-[#22D3EE] font-bold uppercase">
+                    {n.type === "gift" ? "Hadiah TikTok" : n.type === "follow" ? "Pengikut Baru" : "Like"}
+                  </div>
+                  <div className="text-sm font-black tracking-tight uppercase text-slate-900 dark:text-white">
+                    {n.data.nickname}{" "}
+                    {n.type === "gift" ? `hantar ${n.data.giftName}!` : n.type === "follow" ? "mula mengikuti!" : "memberi like!"}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

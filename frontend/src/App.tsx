@@ -31,15 +31,12 @@ export default function App() {
 
       <div className="fixed bottom-6 right-6 flex flex-col items-end gap-3 z-50">
         {showAnswer && (() => {
-          const gs = socketData.gameState;
-          const oddPos = gs?.oddPosition;
-          const colLabel = oddPos ? "ABCDEFGHIJKLMNOPQR"[oddPos.col] : "";
-          const rowLabel = oddPos ? oddPos.row + 1 : "";
+          const word = socketData.gameState?.word;
           return (
             <div className="bg-slate-900/80 backdrop-blur-md border border-slate-700/50 rounded-xl px-4 py-2.5 opacity-60 hover:opacity-100 transition-all shadow-2xl text-center mb-1 group">
               <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1 group-hover:text-neon-cyan transition-colors">Jawapan</div>
               <div className="text-xl font-black text-white tracking-widest uppercase leading-none drop-shadow-md">
-                {oddPos ? `[ ${colLabel} - ${rowLabel} ]` : "..."}
+                {word ? word : "..."}
               </div>
             </div>
           );

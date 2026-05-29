@@ -1,13 +1,4 @@
-export type GridMode = "LOW" | "MEDIUM" | "HIGH";
-
-export type Difficulty = "easy" | "medium" | "hard" | "impossible";
-
 export type GameStatus = "waiting" | "playing" | "won";
-
-export interface GridConfig {
-  cols: number;
-  rows: number;
-}
 
 export interface Winner {
   uniqueId: string;
@@ -32,19 +23,42 @@ export interface SerializedLeaderboardEntry {
   profilePictureUrl?: string;
 }
 
+export interface LetterResult {
+  letter: string;
+  status: "correct" | "wrong-position" | "wrong";
+}
+
+export interface Guess {
+  word: string;
+  result: LetterResult[];
+  uniqueId: string;
+  nickname: string;
+  profilePictureUrl: string;
+  currentGuess?: number;
+  maxGuesses?: number;
+}
+
+export interface HypeInfo {
+  current: number;
+  target: number;
+}
+
+export interface ViewerGuessInfo {
+  count: number;
+  maxGuesses: number;
+}
+
 export interface GameState {
-  grid: string[][];
-  gridMode: GridMode;
-  gridConfig: GridConfig;
-  oddPosition: { col: number; row: number };
-  difficulty: Difficulty;
-  normalChar: string;
-  oddChar: string;
+  word: string;
+  wordLength: number;
   roundNumber: number;
   gameStatus: GameStatus;
   winner: Winner | null;
+  guesses: Guess[];
   leaderboard: SerializedLeaderboardEntry[];
   tiktokUsername: string;
+  currentCategory: string;
+  hypeInfo: HypeInfo;
 }
 
 export interface TikTokStatus {
@@ -60,11 +74,10 @@ export interface Notification {
 
 export interface AdminAction {
   type: string;
-  mode?: GridMode;
-  difficulty?: Difficulty;
   uniqueId?: string;
   nickname?: string;
   comment?: string;
   giftName?: string;
   count?: number;
+  category?: string;
 }

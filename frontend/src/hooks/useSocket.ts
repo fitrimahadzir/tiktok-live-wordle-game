@@ -20,6 +20,16 @@ export const useSocket = () => {
       setGameState(state);
     });
 
+    newSocket.on("hypeUpdate", (hypeInfo) => {
+      setGameState((prev: any) => (prev ? { ...prev, hypeInfo } : prev));
+    });
+
+    newSocket.on("newGuess", (guess: any) => {
+      setGameState((prev: any) =>
+        prev ? { ...prev, guesses: [...prev.guesses, guess] } : prev
+      );
+    });
+
     newSocket.on("tiktokStatus", (status) => {
       setTiktokStatus(status);
     });

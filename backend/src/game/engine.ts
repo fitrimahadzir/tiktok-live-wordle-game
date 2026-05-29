@@ -1,47 +1,49 @@
-import { GridMode, Difficulty, GameStatus, Winner, LeaderboardEntry, SerializedLeaderboardEntry, GameState } from "../types.js";
-import { WAIT_TIME, DIFFICULTY_POINTS, GRID_MODES } from "../config.js";
-import { generateGrid, parseCoordinate, getColLabels } from "./grid.js";
+import { GameStatus, Winner, LeaderboardEntry, SerializedLeaderboardEntry, GameState, Guess, LetterResult, HypeInfo, ViewerGuessInfo } from "../types.js";
+import { WAIT_TIME, TARGET_LEVELS, checkGuess, getWordForCategory, getRandomCategory } from "../config.js";
 
 export type StateChangeCallback = (state: GameState) => void;
+export type HypeUpdateCallback = (hype: HypeInfo) => void;
+export type NewGuessCallback = (guess: Guess) => void;
 
 export class GameEngine {
-  private grid: string[][] = [];
-  private gridMode: GridMode = "LOW";
-  private oddCol = 0;
-  private oddRow = 0;
-  private normalChar = "X";
-  private oddChar = "Y";
-  private difficulty: Difficulty = "easy";
+  private word = "";
+  private currentCategory = "";
   private roundNumber = 0;
   private gameStatus: GameStatus = "waiting";
   private winner: Winner | null = null;
+  private guesses: Guess[] = [];
   private leaderboard: Record<string, LeaderboardEntry> = {};
   private spamCooldowns: Record<string, number> = {};
-  private viewerAnswers: Record<string, boolean> = {};
+  private viewerGuesses: Record<string, ViewerGuessInfo> = {};
+  private skipVotes: Set<string> = new Set();
   private tiktokUsername = "";
+  private hypeInfo: HypeInfo = { current: 0, target: TARGET_LEVELS[0] };
+  private lastLikeCount = 0;
   private onStateChange: StateChangeCallback;
+  private onHypeUpdate: HypeUpdateCallback;
+  private onNewGuess: NewGuessCallback;
 
-  constructor(onStateChange: StateChangeCallback) {
+  constructor(onStateChange: StateChangeCallback, onHypeUpdate?: HypeUpdateCallback, onNewGuess?: NewGuessCallback) {
     this.onStateChange = onStateChange;
+    this.onHypeUpdate = onHypeUpdate || (() => {});
+    this.onNewGuess = onNewGuess || (() => {});
   }
 
   getState(): GameState {
     return {
-      grid: this.grid,
-      gridMode: this.gridMode,
-      gridConfig: GRID_MODES[this.gridMode],
-      oddPosition: { col: this.oddCol, row: this.oddRow },
-      difficulty: this.difficulty,
-      normalChar: this.normalChar,
-      oddChar: this.oddChar,
+      word: this.word,
+      wordLength: this.word.length,
       roundNumber: this.roundNumber,
       gameStatus: this.gameStatus,
       winner: this.winner,
+      guesses: this.guesses,
       leaderboard: Object.entries(this.leaderboard)
         .map(([userId, data]) => ({ userId, ...data }))
         .sort((a, b) => b.wins - a.wins)
         .slice(0, 7),
       tiktokUsername: this.tiktokUsername,
+      currentCategory: this.currentCategory,
+      hypeInfo: this.hypeInfo,
     };
   }
 
@@ -51,7 +53,7 @@ export class GameEngine {
 
   startNewGame() {
     this.roundNumber = 1;
-    this.generateNewGrid();
+    this.generateNewWord();
   }
 
   setTiktokUsername(username: string) {
@@ -59,22 +61,48 @@ export class GameEngine {
     this.broadcast();
   }
 
-  private generateNewGrid() {
-    const result = generateGrid(this.gridMode);
-    this.grid = result.grid;
-    this.oddCol = result.oddCol;
-    this.oddRow = result.oddRow;
-    this.normalChar = result.normalChar;
-    this.oddChar = result.oddChar;
-    this.difficulty = result.difficulty;
+  setCategory(category: string) {
+    this.generateNewWord(category);
+  }
+
+  getHypeInfo(): HypeInfo {
+    return { ...this.hypeInfo };
+  }
+
+  private generateNewWord(forcedCategory?: string) {
+    if (forcedCategory) {
+      this.currentCategory = forcedCategory;
+    } else {
+      this.currentCategory = getRandomCategory(this.currentCategory);
+    }
+
+    this.word = getWordForCategory(this.currentCategory);
     this.gameStatus = "playing";
     this.winner = null;
-    this.viewerAnswers = {};
+    this.guesses = [];
+    this.viewerGuesses = {};
+    this.skipVotes.clear();
     this.broadcast();
-    const colLabels = getColLabels(this.gridMode);
     console.log(
-      `Round #${this.roundNumber}: [${this.gridMode}] ${this.difficulty} normal='${this.normalChar}' odd='${this.oddChar}' at ${colLabels[this.oddCol]}${this.oddRow + 1}`
+      `Pusingan #${this.roundNumber}: Teka perkataan "${this.word}" (${this.word.length} huruf) [${this.currentCategory}]`
     );
+  }
+
+  private updateHypeTarget() {
+    for (const target of TARGET_LEVELS) {
+      if (this.hypeInfo.current < target) {
+        this.hypeInfo.target = target;
+        return;
+      }
+    }
+    this.hypeInfo.target = TARGET_LEVELS[TARGET_LEVELS.length - 1];
+  }
+
+  handleLike(delta: number) {
+    if (delta <= 0) return;
+    this.hypeInfo.current += delta;
+    this.updateHypeTarget();
+    this.onHypeUpdate(this.getHypeInfo());
   }
 
   handleGuess(
@@ -86,19 +114,46 @@ export class GameEngine {
     if (this.gameStatus !== "playing") return;
 
     const now = Date.now();
-    if (
-      this.spamCooldowns[uniqueId] &&
-      now - this.spamCooldowns[uniqueId] < 2000
-    )
-      return;
+    if (this.spamCooldowns[uniqueId] && now - this.spamCooldowns[uniqueId] < 2000) return;
     this.spamCooldowns[uniqueId] = now;
 
-    const coord = parseCoordinate(text, this.gridMode);
-    if (!coord) return;
-    if (this.viewerAnswers[uniqueId]) return;
-    this.viewerAnswers[uniqueId] = true;
+    const guess = text.trim().toUpperCase();
 
-    if (coord.col === this.oddCol && coord.row === this.oddRow) {
+    if (guess === "NEXT" || guess === "SKIP") {
+      this.skipVotes.add(uniqueId);
+      if (this.skipVotes.size >= 5) {
+        this.skipRound();
+      }
+      return;
+    }
+
+    if (guess.length !== this.word.length || !/^[A-Z]+$/.test(guess)) return;
+
+    if (!this.viewerGuesses[uniqueId]) {
+      this.viewerGuesses[uniqueId] = { count: 0, maxGuesses: 99999 };
+    }
+
+    if (this.viewerGuesses[uniqueId].count >= this.viewerGuesses[uniqueId].maxGuesses) return;
+
+    if (this.guesses.some((g) => g.word === guess && g.uniqueId === uniqueId)) return;
+
+    this.viewerGuesses[uniqueId].count++;
+
+    const result = checkGuess(guess, this.word);
+
+    const guessEntry: Guess = {
+      word: guess,
+      result,
+      uniqueId,
+      nickname,
+      profilePictureUrl,
+      currentGuess: this.viewerGuesses[uniqueId].count,
+      maxGuesses: this.viewerGuesses[uniqueId].maxGuesses,
+    };
+    this.guesses.push(guessEntry);
+    this.onNewGuess(guessEntry);
+
+    if (guess === this.word) {
       this.gameStatus = "won";
       this.winner = { uniqueId, nickname, profilePictureUrl };
 
@@ -111,7 +166,7 @@ export class GameEngine {
           profilePictureUrl,
         };
       }
-      this.leaderboard[uniqueId].wins += DIFFICULTY_POINTS[this.difficulty];
+      this.leaderboard[uniqueId].wins += 1;
       this.leaderboard[uniqueId].streak += 1;
       this.leaderboard[uniqueId].lastWin = now;
       this.leaderboard[uniqueId].nickname = nickname;
@@ -121,44 +176,56 @@ export class GameEngine {
 
       setTimeout(() => {
         this.roundNumber++;
-        this.generateNewGrid();
+        this.generateNewWord();
       }, WAIT_TIME * 1000);
+    } else {
+      this.broadcast();
+    }
+  }
+
+  handleGift(uniqueId: string, giftName: string) {
+    if (!this.viewerGuesses[uniqueId]) {
+      this.viewerGuesses[uniqueId] = { count: 0, maxGuesses: 99999 };
+    }
+
+    if (giftName && giftName.toLowerCase().includes("heart")) {
+      this.viewerGuesses[uniqueId].maxGuesses = 99999;
     }
   }
 
   skipRound() {
     this.roundNumber++;
-    this.generateNewGrid();
+    this.generateNewWord();
   }
 
   resetGame() {
     this.roundNumber = 1;
     this.leaderboard = {};
-    this.generateNewGrid();
-  }
-
-  setGridMode(mode: GridMode) {
-    this.gridMode = mode;
-    this.roundNumber++;
-    this.generateNewGrid();
-  }
-
-  setDifficulty(difficulty: Difficulty) {
-    this.difficulty = difficulty;
-    this.roundNumber++;
-    this.generateNewGrid();
+    this.hypeInfo = { current: 0, target: TARGET_LEVELS[0] };
+    this.lastLikeCount = 0;
+    this.generateNewWord();
   }
 
   simulateCorrect() {
-    const colLabels = getColLabels(this.gridMode);
-    const label = `${colLabels[this.oddCol]}${this.oddRow + 1}`;
     const uid = "pro_player_" + Math.floor(Math.random() * 100);
     this.handleGuess(
       uid,
       "Pro Player",
       `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`,
-      label
+      this.word
     );
+  }
+
+  simulateLike(count: number) {
+    this.handleLike(count);
+  }
+
+  setLastLikeCount(count: number) {
+    this.lastLikeCount = count;
+  }
+
+  getLastLikeCount(): number {
+    return this.lastLikeCount;
   }
 
   simulateTopPlayer() {

@@ -24,9 +24,17 @@ const io = new Server(httpServer, {
   },
 });
 
-const gameEngine = new GameEngine((state) => {
-  io.emit("gameState", state);
-});
+const gameEngine = new GameEngine(
+  (state) => {
+    io.emit("gameState", state);
+  },
+  (hype) => {
+    io.emit("hypeUpdate", hype);
+  },
+  (guess) => {
+    io.emit("newGuess", guess);
+  }
+);
 
 const tiktokManager = new TikTokManager(io, gameEngine);
 
@@ -78,6 +86,6 @@ setInterval(() => {
 gameEngine.startNewGame();
 
 httpServer.listen(PORT, () => {
-  console.log(`Odd Hunt Backend running on http://localhost:${PORT}`);
+  console.log(`Tekata Backend running on http://localhost:${PORT}`);
   console.log(`CORS origin: ${CORS_ORIGIN}`);
 });

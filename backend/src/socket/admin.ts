@@ -1,7 +1,6 @@
 import { Server } from "socket.io";
 import { GameEngine } from "../game/engine.js";
-import { AdminAction, Difficulty, GridMode } from "../types.js";
-import { GRID_MODES } from "../config.js";
+import { AdminAction } from "../types.js";
 
 export function handleAdminAction(
   io: Server,
@@ -17,6 +16,12 @@ export function handleAdminAction(
       gameEngine.resetGame();
       break;
 
+    case "category":
+      if (action.category) {
+        gameEngine.setCategory(action.category);
+      }
+      break;
+
     case "simulateChat":
       gameEngine.handleGuess(
         action.uniqueId || "dev_user",
@@ -30,9 +35,17 @@ export function handleAdminAction(
       gameEngine.simulateCorrect();
       break;
 
+    case "simulateLike":
+      gameEngine.simulateLike(action.count || 20);
+      break;
+
     case "simulateGift":
+      gameEngine.handleGift(
+        action.uniqueId || "dev_user",
+        action.giftName || "Heart"
+      );
       io.emit("notification", {
-        type: "gift",
+        type: action.giftName?.toLowerCase().includes("heart") ? "powerup" : "gift",
         data: {
           uniqueId: action.uniqueId || "dev_user",
           nickname: action.nickname || "Developer",
@@ -40,18 +53,6 @@ export function handleAdminAction(
           profilePictureUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${action.uniqueId || "dev_user"}`,
         },
       });
-      break;
-
-    case "setGridMode":
-      if (action.mode && GRID_MODES[action.mode as GridMode]) {
-        gameEngine.setGridMode(action.mode as GridMode);
-      }
-      break;
-
-    case "setDifficulty":
-      if (action.difficulty) {
-        gameEngine.setDifficulty(action.difficulty as Difficulty);
-      }
       break;
 
     case "simulateTopPlayer":
