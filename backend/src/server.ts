@@ -2,9 +2,13 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import { GameEngine } from "./game/engine.js";
 import { TikTokManager } from "./tiktok/client.js";
 import { handleAdminAction } from "./socket/admin.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const PORT = Number(process.env.PORT) || 8080;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
@@ -58,6 +62,13 @@ io.on("connection", (socket) => {
   socket.on("adminAction", (action: any) => {
     handleAdminAction(io, gameEngine, action);
   });
+});
+
+const distPath = path.join(__dirname, "../../dist");
+app.use(express.static(distPath));
+app.get("*", (req, res) => {
+  if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) return;
+  res.sendFile(path.join(distPath, "index.html"));
 });
 
 setInterval(() => {

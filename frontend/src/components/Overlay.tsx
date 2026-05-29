@@ -52,15 +52,83 @@ export default function Overlay({ gameState, notifications, tiktokStatus, adminA
 
           {/* Center Column */}
           <div className="w-fit flex flex-col items-center justify-center">
-            <OddOneGrid
-              grid={gameState.grid}
-              oddPosition={gameState.oddPosition}
-              difficulty={gameState.difficulty}
-              roundNumber={gameState.roundNumber}
-              gameStatus={gameState.gameStatus}
-              gridMode={gameState.gridMode || "LOW"}
-              gridConfig={gameState.gridConfig || { cols: 18, rows: 12 }}
-            />
+            <div className="relative">
+              <OddOneGrid
+                grid={gameState.grid}
+                oddPosition={gameState.oddPosition}
+                difficulty={gameState.difficulty}
+                roundNumber={gameState.roundNumber}
+                gameStatus={gameState.gameStatus}
+                gridMode={gameState.gridMode || "LOW"}
+                gridConfig={gameState.gridConfig || { cols: 18, rows: 12 }}
+              />
+
+              {/* Notifications overlay centered on grid */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-2 z-40 pointer-events-none items-center">
+                <AnimatePresence>
+                  {notifications.map((n: any, i: number) => (
+                    <motion.div
+                      key={i}
+                      initial={{ y: 20, opacity: 0, scale: 0.9 }}
+                      animate={{ y: 0, opacity: 1, scale: 1 }}
+                      exit={{ y: -20, opacity: 0, scale: 0.9 }}
+                      className={`bg-white dark:bg-slate-800 border-2 ${
+                        n.type === "powerup"
+                          ? "border-neon-yellow"
+                          : "border-neon-purple"
+                      } p-3 px-6 rounded-2xl flex items-center gap-4 shadow-xl ring-4 ring-white dark:ring-slate-900 transition-colors duration-500`}
+                    >
+                      {n.type === "powerup" ? (
+                        <>
+                          {n.data.profilePictureUrl && (
+                            <img
+                              src={n.data.profilePictureUrl}
+                              alt={n.data.nickname}
+                              className="w-10 h-10 rounded-full border-2 border-[#FACC15] shrink-0"
+                              referrerPolicy="no-referrer"
+                            />
+                          )}
+                          <div className="flex flex-col">
+                            <div className="text-sm font-bold text-slate-700 dark:text-white/70 whitespace-nowrap">
+                              Terima kasih heart me ❤️
+                            </div>
+                            <div className="text-xs font-black tracking-tight text-[#CA8A04] dark:text-[#FACC15] uppercase">
+                              <span className="text-slate-900 dark:text-white">
+                                @{n.data.uniqueId}
+                              </span>{" "}
+                              dapat tekaan unlimited
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#22D3EE] to-[#7C3AED] flex items-center justify-center text-sm shrink-0">
+                            {n.type === "gift" ? "🎁" : n.type === "follow" ? "💖" : "👍"}
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-[#0891B2] dark:text-[#22D3EE] font-bold uppercase">
+                              {n.type === "gift"
+                                ? "Hadiah TikTok"
+                                : n.type === "follow"
+                                ? "Pengikut Baru"
+                                : "Like"}
+                            </div>
+                            <div className="text-sm font-black tracking-tight uppercase text-slate-900 dark:text-white">
+                              {n.data.nickname}{" "}
+                              {n.type === "gift"
+                                ? `hantar ${n.data.giftName}!`
+                                : n.type === "follow"
+                                ? "mula mengikuti!"
+                                : "memberi like!"}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
 
             {/* Gift / Heart CTA Banner */}
             <div className="mt-6 w-full max-w-md">
@@ -187,71 +255,7 @@ export default function Overlay({ gameState, notifications, tiktokStatus, adminA
           )}
         </AnimatePresence>
 
-        {/* Notifications */}
-        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex flex-col gap-2 z-40 pointer-events-none items-center">
-          <AnimatePresence>
-            {notifications.map((n: any, i: number) => (
-              <motion.div
-                key={i}
-                initial={{ y: 20, opacity: 0, scale: 0.9 }}
-                animate={{ y: 0, opacity: 1, scale: 1 }}
-                exit={{ y: -20, opacity: 0, scale: 0.9 }}
-                className={`bg-white dark:bg-slate-800 border-2 ${
-                  n.type === "powerup"
-                    ? "border-neon-yellow"
-                    : "border-neon-purple"
-                } p-3 px-6 rounded-2xl flex items-center gap-4 shadow-xl ring-4 ring-white dark:ring-slate-900 transition-colors duration-500`}
-              >
-                {n.type === "powerup" ? (
-                  <>
-                    {n.data.profilePictureUrl && (
-                      <img
-                        src={n.data.profilePictureUrl}
-                        alt={n.data.nickname}
-                        className="w-10 h-10 rounded-full border-2 border-[#FACC15] shrink-0"
-                        referrerPolicy="no-referrer"
-                      />
-                    )}
-                    <div className="flex flex-col">
-                      <div className="text-sm font-bold text-slate-700 dark:text-white/70 whitespace-nowrap">
-                        Terima kasih heart me ❤️
-                      </div>
-                      <div className="text-xs font-black tracking-tight text-[#CA8A04] dark:text-[#FACC15] uppercase">
-                        <span className="text-slate-900 dark:text-white">
-                          @{n.data.uniqueId}
-                        </span>{" "}
-                        dapat tekaan unlimited
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#22D3EE] to-[#7C3AED] flex items-center justify-center text-sm shrink-0">
-                      {n.type === "gift" ? "🎁" : n.type === "follow" ? "💖" : "👍"}
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-[#0891B2] dark:text-[#22D3EE] font-bold uppercase">
-                        {n.type === "gift"
-                          ? "Hadiah TikTok"
-                          : n.type === "follow"
-                          ? "Pengikut Baru"
-                          : "Like"}
-                      </div>
-                      <div className="text-sm font-black tracking-tight uppercase text-slate-900 dark:text-white">
-                        {n.data.nickname}{" "}
-                        {n.type === "gift"
-                          ? `hantar ${n.data.giftName}!`
-                          : n.type === "follow"
-                          ? "mula mengikuti!"
-                          : "memberi like!"}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
+
       </div>
     </div>
   );
