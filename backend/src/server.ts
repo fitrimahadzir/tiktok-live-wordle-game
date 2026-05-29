@@ -3,12 +3,9 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import path from "path";
-import { fileURLToPath } from "url";
 import { GameEngine } from "./game/engine.js";
 import { TikTokManager } from "./tiktok/client.js";
 import { handleAdminAction } from "./socket/admin.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const PORT = Number(process.env.PORT) || 8080;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
@@ -66,7 +63,7 @@ io.on("connection", (socket) => {
 });
 
 if (SERVE_STATIC) {
-  const distPath = path.join(__dirname, "../../dist");
+  const distPath = path.join(process.cwd(), "frontend/dist");
   app.use(express.static(distPath));
   app.get("*", (req, res) => {
     if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) return;
