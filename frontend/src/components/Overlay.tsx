@@ -132,21 +132,43 @@ export default function Overlay({ gameState, notifications, tiktokStatus, adminA
 
             {/* Gift / Heart CTA Banner */}
             <div className="mt-6 w-full max-w-md">
-              <div className="flex items-center gap-3 bg-gradient-to-r from-pink-500/10 to-red-500/10 border border-pink-500/30 rounded-2xl px-4 py-3 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-pink-500/5 to-transparent pointer-events-none" />
-                <div className="flex items-center justify-center w-9 h-9 bg-pink-500/20 rounded-full border border-pink-400/40 shrink-0">
-                  <span className="text-lg animate-bounce">❤️</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-pink-400 mb-0.5">
-                    💖 SUPPORT HOST
+              <motion.div
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className="group relative overflow-hidden rounded-[20px] bg-white/10 dark:bg-white/[0.04] border border-pink-400/20 dark:border-pink-400/15 shadow-lg shadow-pink-500/5 backdrop-blur-xl px-5 py-4"
+              >
+                <div className="absolute inset-0 rounded-[20px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-pink-500/8 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-pink-400/30 to-transparent" />
+
+                <div className="relative flex items-center gap-4">
+                  <div className="relative shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400/25 to-rose-400/15 flex items-center justify-center border border-pink-400/25 shadow-inner">
+                      <motion.span
+                        animate={{ scale: [1, 1.12, 1] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        className="text-base"
+                      >
+                        ❤️
+                      </motion.span>
+                    </div>
                   </div>
-                  <div className="text-sm font-bold text-white leading-tight">
-                    Jangan lupa send <span className="text-pink-400">Heart Me</span> untuk sokongan! 🎁
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[9px] font-black uppercase tracking-[0.25em] text-pink-300/70 mb-1">
+                      Support Host
+                    </p>
+                    <p className="text-sm font-semibold text-white/85 leading-snug">
+                      Hantar <span className="text-pink-300 font-bold">Heart Me</span> untuk tekaan tanpa had!
+                    </p>
+                  </div>
+
+                  <div className="shrink-0 w-8 h-8 rounded-full bg-white/5 border border-pink-400/20 flex items-center justify-center group-hover:bg-pink-400/15 group-hover:border-pink-400/40 group-hover:translate-x-0.5 transition-all duration-300">
+                    <svg className="w-3.5 h-3.5 text-pink-300/50 group-hover:text-pink-300 transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
                   </div>
                 </div>
-                <div className="shrink-0 text-2xl animate-pulse">💝</div>
-              </div>
+              </motion.div>
             </div>
 
             {/* Like Bar */}
