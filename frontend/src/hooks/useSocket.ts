@@ -4,7 +4,19 @@ import { io, Socket } from "socket.io-client";
 const BACKEND_URL =
   import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
 
+const SESSION_KEY = "odd-hunt-session-id";
+
+function getOrCreateSessionId(): string {
+  let sessionId = localStorage.getItem(SESSION_KEY);
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem(SESSION_KEY, sessionId);
+  }
+  return sessionId;
+}
+
 export const useSocket = () => {
+  const [sessionId] = useState(getOrCreateSessionId);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [gameState, setGameState] = useState<any>(null);
   const [tiktokStatus, setTiktokStatus] = useState<any>({
@@ -13,12 +25,6 @@ export const useSocket = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
-    let sessionId = localStorage.getItem("sessionId");
-    if (!sessionId) {
-      sessionId = crypto.randomUUID();
-      localStorage.setItem("sessionId", sessionId);
-    }
-
     const newSocket = io(BACKEND_URL, {
       auth: { sessionId },
     });
@@ -52,7 +58,7 @@ export const useSocket = () => {
     return () => {
       newSocket.disconnect();
     };
-  }, []);
+  }, [sessionId]);
 
   const connectTiktok = useCallback(
     (username: string) => {
@@ -70,6 +76,7 @@ export const useSocket = () => {
 
   return {
     socket,
+    sessionId,
     gameState,
     tiktokStatus,
     notifications,

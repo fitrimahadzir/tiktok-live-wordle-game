@@ -17,6 +17,7 @@ interface AdminProps {
   setIsDevMode: (dev: boolean) => void;
   showLikeBar: boolean;
   setShowLikeBar: (show: boolean) => void;
+  sessionId?: string;
 }
 
 export default function Admin({
@@ -34,6 +35,7 @@ export default function Admin({
   setIsDevMode,
   showLikeBar,
   setShowLikeBar,
+  sessionId,
 }: AdminProps) {
   const [username, setUsername] = useState("");
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
@@ -166,6 +168,13 @@ export default function Admin({
                 </span>
               )}
             </div>
+
+            {sessionId && (
+              <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500 bg-slate-900/30 px-3 py-1.5 rounded-lg border border-slate-800/50">
+                <span className="uppercase tracking-wider text-slate-600 font-bold">Session:</span>
+                <span className="text-neon-cyan/70 truncate">{sessionId}</span>
+              </div>
+            )}
 
             {tiktokStatus?.status === "error" && (
               <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2 text-red-400 text-xs">

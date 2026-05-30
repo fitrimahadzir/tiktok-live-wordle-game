@@ -45,7 +45,8 @@ export function handleAdminAction(
         action.uniqueId || "dev_user",
         action.giftName || "Heart"
       );
-      io.to(roomId || "").emit("notification", {
+      const target = roomId ? io.to(roomId) : io;
+      target.emit("notification", {
         type: action.giftName?.toLowerCase().includes("heart") ? "powerup" : "gift",
         data: {
           uniqueId: action.uniqueId || "dev_user",

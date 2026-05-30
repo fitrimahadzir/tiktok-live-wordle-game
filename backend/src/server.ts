@@ -37,20 +37,15 @@ app.get("/api/game-state", (_req, res) => {
 });
 
 io.on("connection", (socket) => {
-  const sessionId = socket.handshake.auth.sessionId as string;
-  if (!sessionId) {
-    socket.disconnect();
-    return;
-  }
-
-  const { gameEngine, tiktokManager } = sessionManager.getOrCreateSession(sessionId);
+  const sessionId = (socket.handshake.auth?.sessionId as string) || socket.id;
+  const session = sessionManager.getOrCreateSession(sessionId);
   socket.join(sessionId);
 
-  socket.emit("gameState", gameEngine.getState());
+  socket.emit("gameState", session.gameEngine.getState());
 
   socket.on("connectTiktok", async (username: string) => {
     try {
-      await tiktokManager.connect(username);
+      await session.tiktokManager.connect(username);
     } catch (err: any) {
       io.to(sessionId).emit("tiktokStatus", {
         status: "error",
@@ -60,7 +55,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("adminAction", (action: any) => {
-    handleAdminAction(io, gameEngine, action, sessionId);
+    handleAdminAction(io, session.gameEngine, action, sessionId);
   });
 
   socket.on("disconnect", () => {

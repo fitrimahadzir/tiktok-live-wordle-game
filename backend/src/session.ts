@@ -2,20 +2,20 @@ import { Server } from "socket.io";
 import { GameEngine } from "./game/engine.js";
 import { TikTokManager } from "./tiktok/client.js";
 
-interface SessionData {
+interface SessionState {
   gameEngine: GameEngine;
   tiktokManager: TikTokManager;
 }
 
 export class SessionManager {
-  private sessions: Map<string, SessionData> = new Map();
+  private sessions: Map<string, SessionState> = new Map();
   private io: Server;
 
   constructor(io: Server) {
     this.io = io;
   }
 
-  createSession(sessionId: string): SessionData {
+  createSession(sessionId: string): SessionState {
     const gameEngine = new GameEngine(
       (state) => {
         this.io.to(sessionId).emit("gameState", state);
@@ -30,7 +30,7 @@ export class SessionManager {
 
     const tiktokManager = new TikTokManager(this.io, gameEngine, sessionId);
 
-    const data: SessionData = { gameEngine, tiktokManager };
+    const data: SessionState = { gameEngine, tiktokManager };
     this.sessions.set(sessionId, data);
 
     gameEngine.startNewGame();
@@ -38,17 +38,17 @@ export class SessionManager {
     return data;
   }
 
-  getOrCreateSession(sessionId: string): SessionData {
+  getOrCreateSession(sessionId: string): SessionState {
     const existing = this.sessions.get(sessionId);
     if (existing) return existing;
     return this.createSession(sessionId);
   }
 
-  getSession(sessionId: string): SessionData | undefined {
+  getSession(sessionId: string): SessionState | undefined {
     return this.sessions.get(sessionId);
   }
 
-  removeSession(sessionId: string) {
+  deleteSession(sessionId: string) {
     const session = this.sessions.get(sessionId);
     if (session) {
       session.tiktokManager.disconnect();
