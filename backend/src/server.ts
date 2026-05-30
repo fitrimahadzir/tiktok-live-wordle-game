@@ -3,8 +3,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import path from "path";
-import { GameEngine } from "./game/engine.js";
-import { TikTokManager } from "./tiktok/client.js";
+import { SessionManager } from "./session.js";
 import { handleAdminAction } from "./socket/admin.js";
 
 const PORT = Number(process.env.PORT) || 8080;
@@ -24,41 +23,36 @@ const io = new Server(httpServer, {
   },
 });
 
-const gameEngine = new GameEngine(
-  (state) => {
-    io.emit("gameState", state);
-  },
-  (hype) => {
-    io.emit("hypeUpdate", hype);
-  },
-  (guess) => {
-    io.emit("newGuess", guess);
-  }
-);
-
-const tiktokManager = new TikTokManager(io, gameEngine);
+const sessionManager = new SessionManager(io);
 
 app.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
     uptime: process.uptime(),
-    round: gameEngine.getState().roundNumber,
-    players: gameEngine.getState().leaderboard.length,
   });
 });
 
 app.get("/api/game-state", (_req, res) => {
-  res.json(gameEngine.getState());
+  res.json({ message: "Use WebSocket connection with sessionId" });
 });
 
 io.on("connection", (socket) => {
+  const sessionId = socket.handshake.auth.sessionId as string;
+  if (!sessionId) {
+    socket.disconnect();
+    return;
+  }
+
+  const { gameEngine, tiktokManager } = sessionManager.getOrCreateSession(sessionId);
+  socket.join(sessionId);
+
   socket.emit("gameState", gameEngine.getState());
 
   socket.on("connectTiktok", async (username: string) => {
     try {
       await tiktokManager.connect(username);
     } catch (err: any) {
-      io.emit("tiktokStatus", {
+      io.to(sessionId).emit("tiktokStatus", {
         status: "error",
         message: err.message || "Failed to connect to TikTok",
       });
@@ -66,7 +60,11 @@ io.on("connection", (socket) => {
   });
 
   socket.on("adminAction", (action: any) => {
-    handleAdminAction(io, gameEngine, action);
+    handleAdminAction(io, gameEngine, action, sessionId);
+  });
+
+  socket.on("disconnect", () => {
+    socket.leave(sessionId);
   });
 });
 
@@ -78,12 +76,6 @@ if (SERVE_STATIC) {
     res.sendFile(path.join(distPath, "index.html"));
   });
 }
-
-setInterval(() => {
-  gameEngine.getState();
-}, 2000);
-
-gameEngine.startNewGame();
 
 httpServer.listen(PORT, () => {
   console.log(`Tekata Backend running on http://localhost:${PORT}`);

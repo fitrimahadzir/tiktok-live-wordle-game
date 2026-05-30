@@ -13,7 +13,15 @@ export const useSocket = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
-    const newSocket = io(BACKEND_URL);
+    let sessionId = localStorage.getItem("sessionId");
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      localStorage.setItem("sessionId", sessionId);
+    }
+
+    const newSocket = io(BACKEND_URL, {
+      auth: { sessionId },
+    });
     setSocket(newSocket);
 
     newSocket.on("gameState", (state) => {

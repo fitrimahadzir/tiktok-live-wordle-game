@@ -5,7 +5,8 @@ import { AdminAction } from "../types.js";
 export function handleAdminAction(
   io: Server,
   gameEngine: GameEngine,
-  action: AdminAction
+  action: AdminAction,
+  roomId?: string
 ) {
   switch (action.type) {
     case "skip":
@@ -44,7 +45,7 @@ export function handleAdminAction(
         action.uniqueId || "dev_user",
         action.giftName || "Heart"
       );
-      io.emit("notification", {
+      io.to(roomId || "").emit("notification", {
         type: action.giftName?.toLowerCase().includes("heart") ? "powerup" : "gift",
         data: {
           uniqueId: action.uniqueId || "dev_user",
